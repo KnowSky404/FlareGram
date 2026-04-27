@@ -8,9 +8,7 @@ import type { Env } from "../types/env";
 
 export function createRouter(env: Env, bot: { api: unknown }) {
   const adminChatId = Number(env.ADMIN_CHAT_ID);
-  const telegram = createTelegramService(
-    bot as Parameters<typeof createTelegramService>[0]
-  );
+  const telegram = createTelegramService(bot as never);
   const users = createUserRepository(env.DB);
   const links = createMessageLinkRepository(env.DB);
 
