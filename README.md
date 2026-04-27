@@ -96,45 +96,23 @@ curl "https://api.telegram.org/bot<你的BOT_TOKEN>/getUpdates"
 }
 ```
 
-### 5. 获取 `BOT_INFO`
-
-当前项目按 grammY 在 Cloudflare Workers 上的常见做法，要求你把 Telegram `getMe` 的结果保存到 `BOT_INFO`。
-
-先取机器人信息：
-
-```bash
-curl "https://api.telegram.org/bot<你的BOT_TOKEN>/getMe"
-```
-
-把返回 JSON 里的 `result` 整段保存下来，后面设置 secret 时直接粘贴。
-
-示例：
-
-```json
-{
-  "id": 123456789,
-  "is_bot": true,
-  "first_name": "FlareGramBot",
-  "username": "flaregram_bot",
-  "can_join_groups": true,
-  "can_read_all_group_messages": false,
-  "supports_inline_queries": false
-}
-```
-
-### 6. 设置 Secrets
+### 5. 设置 Secrets
 
 ```bash
 pnpm wrangler secret put BOT_TOKEN
-pnpm wrangler secret put BOT_INFO
 pnpm wrangler secret put WEBHOOK_SECRET
 ```
 
 建议：
 
 - `BOT_TOKEN`：直接填 BotFather 给你的 token
-- `BOT_INFO`：填上一步 `getMe` 返回的 `result` JSON
 - `WEBHOOK_SECRET`：填一个高强度随机字符串，例如 `flaregram-prod-2026-xxxxxx`
+
+说明：
+
+- `BOT_INFO` 不再需要手工配置
+- Worker 会在首次请求时基于 `BOT_TOKEN` 自动调用 Telegram `getMe` 获取 bot 信息
+- 如果你之前已经配置过 `BOT_INFO`，当前版本仍会兼容读取，但新部署可以不再设置
 
 ## 数据库初始化
 
@@ -156,11 +134,30 @@ pnpm run db:migrate:local
 pnpm run deploy
 ```
 
-部署完成后，你会拿到 Worker 地址，通常类似：
+默认情况下，部署完成后你会拿到 Worker 地址，通常类似：
 
 ```text
 https://flaregram.<your-subdomain>.workers.dev
 ```
+
+如果你要直接绑定 Cloudflare 托管的自定义域名，推荐把它写进 `wrangler.jsonc`，并把本地配置作为唯一真源。例如：
+
+```jsonc
+{
+  "routes": [
+    {
+      "pattern": "flaregram.knowsky404.com",
+      "custom_domain": true
+    }
+  ]
+}
+```
+
+说明：
+
+- `custom_domain: true` 适用于“这个子域名的所有流量都直接交给 Worker 处理”
+- 当域名所在 Zone 已托管在 Cloudflare 时，Cloudflare 会自动为 Custom Domain 管理 DNS 记录和证书
+- 如果你之后仍使用 `wrangler deploy`，不要只在 Cloudflare Dashboard 里修改路由；下次部署时本地 `wrangler.jsonc` 会覆盖 Dashboard 中的路由配置
 
 ## 注册 Telegram Webhook
 
@@ -176,6 +173,12 @@ https://flaregram.<your-subdomain>.workers.dev
 https://flaregram.<your-subdomain>.workers.dev
 ```
 
+如果你使用自定义域名，例如：
+
+```text
+https://flaregram.knowsky404.com
+```
+
 并且 `WEBHOOK_SECRET` 是：
 
 ```text
@@ -188,10 +191,22 @@ my-secret-path
 https://flaregram.<your-subdomain>.workers.dev/telegram/webhook/my-secret-path
 ```
 
+使用自定义域名时，则是：
+
+```text
+https://flaregram.knowsky404.com/telegram/webhook/my-secret-path
+```
+
 注册命令：
 
 ```bash
 curl "https://api.telegram.org/bot<你的BOT_TOKEN>/setWebhook?url=https://flaregram.<your-subdomain>.workers.dev/telegram/webhook/<你的WEBHOOK_SECRET>"
+```
+
+如果你已经切到自定义域名，请改成：
+
+```bash
+curl "https://api.telegram.org/bot<你的BOT_TOKEN>/setWebhook?url=https://flaregram.knowsky404.com/telegram/webhook/<你的WEBHOOK_SECRET>"
 ```
 
 检查 webhook 状态：
@@ -209,7 +224,7 @@ curl "https://api.telegram.org/bot<你的BOT_TOKEN>/getWebhookInfo"
 3. 管理员直接“回复这条转发消息”
 4. 原用户应收到管理员回复
 
-再补测一次图片或文件消息，确认 `copyMessage` 路径正常。
+再补测一次非文本消息，例如图片、文件、表情包或动图，确认 `copyMessage` 路径正常。
 
 ## 本地测试
 

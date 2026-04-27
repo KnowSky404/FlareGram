@@ -1,11 +1,3 @@
-export const SUPPORTED_MESSAGE_KEYS = [
-  "text",
-  "photo",
-  "document",
-  "voice",
-  "video",
-] as const;
-
 export const ADMIN_ROUTE_NOT_FOUND_MESSAGE =
   "Cannot route this reply: original user mapping was not found.";
 

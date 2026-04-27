@@ -11,7 +11,7 @@ export default {
       return new Response("Not Found", { status: 404 });
     }
 
-    const bot = createBot(env);
+    const bot = await createBot(env);
 
     return webhookCallback(bot, "cloudflare-mod")(request);
   },

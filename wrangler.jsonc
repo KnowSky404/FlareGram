@@ -2,14 +2,20 @@
   "name": "flaregram",
   "main": "src/index.ts",
   "compatibility_date": "2026-04-27",
+  "routes": [
+    {
+      "pattern": "flaregram.knowsky404.com",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "flaregram",
-      "database_id": "REPLACE_WITH_REAL_D1_ID"
+      "database_id": "476a3523-8106-4560-a4df-2867f6ecfb2d"
     }
   ],
   "vars": {
-    "ADMIN_CHAT_ID": "REPLACE_WITH_ADMIN_CHAT_ID"
+    "ADMIN_CHAT_ID": "1896980123"
   }
 }

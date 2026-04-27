@@ -1,5 +1,4 @@
 import type { Message } from "grammy/types";
-import { isSupportedMessage } from "../lib/telegram-message";
 import { UNSUPPORTED_MESSAGE_NOTICE } from "../lib/constants";
 
 interface Dependencies {
@@ -37,12 +36,13 @@ interface Dependencies {
 export async function handleUserMessage(deps: Dependencies): Promise<void> {
   const { adminChatId, message, telegram, users, links, now } = deps;
 
-  if (!isSupportedMessage(message)) {
+  let copied: { message_id: number };
+  try {
+    copied = await telegram.copyMessageToAdmin(adminChatId, message);
+  } catch {
     await telegram.sendText(message.chat.id, UNSUPPORTED_MESSAGE_NOTICE);
     return;
   }
-
-  const copied = await telegram.copyMessageToAdmin(adminChatId, message);
 
   await users.upsert({
     telegramUserId: message.from!.id,
