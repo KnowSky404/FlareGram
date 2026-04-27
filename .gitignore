@@ -1,0 +1,40 @@
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies and package managers
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+
+# Build and cache output
+dist/
+build/
+.cache/
+.tmp/
+tmp/
+coverage/
+.worktrees/
+
+# Runtime
+*.pid
+*.pid.lock
