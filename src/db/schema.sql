@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   telegram_user_id INTEGER PRIMARY KEY,
   telegram_chat_id INTEGER NOT NULL UNIQUE,
   username TEXT,
@@ -8,7 +8,7 @@ CREATE TABLE users (
   updated_at TEXT NOT NULL
 );
 
-CREATE TABLE message_links (
+CREATE TABLE IF NOT EXISTS message_links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   admin_chat_id INTEGER NOT NULL,
   admin_message_id INTEGER NOT NULL,
@@ -18,8 +18,8 @@ CREATE TABLE message_links (
   created_at TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_message_links_admin_route
+CREATE UNIQUE INDEX IF NOT EXISTS idx_message_links_admin_message
   ON message_links (admin_chat_id, admin_message_id);
 
-CREATE INDEX idx_message_links_user_created_at
+CREATE INDEX IF NOT EXISTS idx_message_links_user_created
   ON message_links (user_chat_id, created_at);
