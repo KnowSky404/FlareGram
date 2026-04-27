@@ -1,0 +1,15 @@
+{
+  "name": "flaregram",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-27",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "flaregram",
+      "database_id": "REPLACE_WITH_REAL_D1_ID"
+    }
+  ],
+  "vars": {
+    "ADMIN_CHAT_ID": "REPLACE_WITH_ADMIN_CHAT_ID"
+  }
+}
