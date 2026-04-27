@@ -4,10 +4,10 @@ import type { Env } from "./types/env";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const expectedPath = "/telegram/webhook/" + env.WEBHOOK_SECRET;
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const expectedPath = `/telegram/webhook/${env.WEBHOOK_SECRET}`;
 
-    if (request.method !== "POST" || pathname !== expectedPath) {
+    if (request.method !== "POST" || url.pathname !== expectedPath) {
       return new Response("Not Found", { status: 404 });
     }
 
