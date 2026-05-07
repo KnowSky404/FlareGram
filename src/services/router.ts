@@ -25,6 +25,7 @@ export function createRouter(env: Env, bot: { api: unknown }) {
           telegram,
           links,
           blockedUsers,
+          users,
           now: new Date().toISOString(),
         });
         return;

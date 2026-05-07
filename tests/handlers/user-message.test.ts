@@ -33,17 +33,11 @@ describe("handleUserMessage", () => {
     expect(telegram.copyMessageToAdmin).not.toHaveBeenCalled();
     expect(telegram.sendTextToAdmin).toHaveBeenCalledWith(
       12345,
-      [
-        "From: Alice",
-        "Username: -",
-        "User ID: 456",
-        "Chat ID: 777",
-        "",
-        "hello",
-      ].join("\n"),
+      "hello",
       expect.objectContaining({
         inline_keyboard: [[
           { text: "Reply", callback_data: "fg:r:456:777" },
+          { text: "Info", callback_data: "fg:i:456:777" },
           { text: "Block", callback_data: "fg:b:456:777" },
           { text: "Unblock", callback_data: "fg:u:456:777" },
         ]],
@@ -99,6 +93,7 @@ describe("handleUserMessage", () => {
       expect.objectContaining({
         inline_keyboard: [[
           { text: "Reply", callback_data: "fg:r:457:778" },
+          { text: "Info", callback_data: "fg:i:457:778" },
           { text: "Block", callback_data: "fg:b:457:778" },
           { text: "Unblock", callback_data: "fg:u:457:778" },
         ]],

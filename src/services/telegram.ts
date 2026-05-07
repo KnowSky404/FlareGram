@@ -30,8 +30,15 @@ export function createTelegramService(bot: Bot) {
     copyReplyToUser(userChatId: number, message: Message) {
       return bot.api.copyMessage(userChatId, message.chat.id, message.message_id);
     },
-    answerCallback(callbackQueryId: string, text?: string) {
-      return bot.api.answerCallbackQuery(callbackQueryId, text ? { text } : undefined);
+    answerCallback(
+      callbackQueryId: string,
+      text?: string,
+      options?: { showAlert?: boolean }
+    ) {
+      return bot.api.answerCallbackQuery(
+        callbackQueryId,
+        text ? { text, show_alert: options?.showAlert } : undefined
+      );
     },
   };
 }

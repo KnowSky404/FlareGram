@@ -13,3 +13,5 @@ export const ADMIN_UNBLOCKED_USER_MESSAGE = "User has been unblocked.";
 
 export const ADMIN_REPLY_PROMPT_MESSAGE =
   "Reply to this message to send your response to the user.";
+
+export const USER_INFO_NOT_FOUND_MESSAGE = "User info was not found.";

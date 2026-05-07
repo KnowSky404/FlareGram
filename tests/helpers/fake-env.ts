@@ -61,6 +61,16 @@ export function createStubD1Database() {
           return (blockedUsers.get(telegramUserId) as T | null) ?? null;
         }
 
+        if (query.includes("FROM users")) {
+          const [telegramUserId] = values as [number];
+          for (const user of usersByChatId.values()) {
+            if (user.telegram_user_id === telegramUserId) {
+              return user as T;
+            }
+          }
+          return null;
+        }
+
         throw new Error(`Unsupported first query: ${query}`);
       },
       async run<T = Record<string, unknown>>(): Promise<D1Result<T>> {

@@ -7,6 +7,32 @@ export interface UserUpsertRecord {
   now: string;
 }
 
+export interface UserRecord {
+  telegramUserId: number;
+  telegramChatId: number;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+interface UserRow {
+  telegram_user_id: number;
+  telegram_chat_id: number;
+  username: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+function mapUserRow(row: UserRow): UserRecord {
+  return {
+    telegramUserId: row.telegram_user_id,
+    telegramChatId: row.telegram_chat_id,
+    username: row.username,
+    firstName: row.first_name,
+    lastName: row.last_name,
+  };
+}
+
 export function createUserRepository(db: D1Database) {
   return {
     async upsert(record: UserUpsertRecord): Promise<void> {
@@ -32,6 +58,18 @@ export function createUserRepository(db: D1Database) {
           record.now
         )
         .run();
+    },
+    async findByTelegramUserId(telegramUserId: number): Promise<UserRecord | null> {
+      const row = await db
+        .prepare(
+          `SELECT telegram_user_id, telegram_chat_id, username, first_name, last_name
+           FROM users
+           WHERE telegram_user_id = ?`
+        )
+        .bind(telegramUserId)
+        .first<UserRow>();
+
+      return row ? mapUserRow(row) : null;
     },
   };
 }

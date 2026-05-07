@@ -4,7 +4,9 @@ import {
   ADMIN_REPLY_PROMPT_MESSAGE,
   ADMIN_ROUTE_NOT_FOUND_MESSAGE,
   ADMIN_UNBLOCKED_USER_MESSAGE,
+  USER_INFO_NOT_FOUND_MESSAGE,
 } from "../lib/constants";
+import type { UserRecord } from "../repositories/users";
 
 interface Dependencies {
   adminChatId: number;
@@ -15,7 +17,11 @@ interface Dependencies {
       text: string,
       replyMarkup?: ForceReply
     ): Promise<{ message_id: number }>;
-    answerCallback(callbackQueryId: string, text?: string): Promise<unknown>;
+    answerCallback(
+      callbackQueryId: string,
+      text?: string,
+      options?: { showAlert?: boolean }
+    ): Promise<unknown>;
   };
   links: {
     insert(input: {
@@ -35,11 +41,14 @@ interface Dependencies {
     }): Promise<void>;
     unblock(telegramUserId: number): Promise<void>;
   };
+  users: {
+    findByTelegramUserId(telegramUserId: number): Promise<UserRecord | null>;
+  };
   now: string;
 }
 
 function parseAction(data: string | undefined) {
-  const match = data?.match(/^fg:([rbu]):(-?\d+):(-?\d+)$/);
+  const match = data?.match(/^fg:([ribu]):(-?\d+):(-?\d+)$/);
   if (!match) {
     return null;
   }
@@ -51,8 +60,20 @@ function parseAction(data: string | undefined) {
   };
 }
 
+function formatUserInfo(user: UserRecord): string {
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "-";
+  const username = user.username ? `@${user.username}` : "-";
+
+  return [
+    `From: ${displayName}`,
+    `Username: ${username}`,
+    `User ID: ${user.telegramUserId}`,
+    `Chat ID: ${user.telegramChatId}`,
+  ].join("\n");
+}
+
 export async function handleAdminAction(deps: Dependencies): Promise<void> {
-  const { adminChatId, callbackQuery, telegram, links, blockedUsers, now } = deps;
+  const { adminChatId, callbackQuery, telegram, links, blockedUsers, users, now } = deps;
 
   if (callbackQuery.from.id !== adminChatId) {
     await telegram.answerCallback(callbackQuery.id);
@@ -77,6 +98,16 @@ export async function handleAdminAction(deps: Dependencies): Promise<void> {
       createdAt: now,
     });
     await telegram.answerCallback(callbackQuery.id, "Reply prompt created.");
+    return;
+  }
+
+  if (parsed.action === "i") {
+    const user = await users.findByTelegramUserId(parsed.telegramUserId);
+    await telegram.answerCallback(
+      callbackQuery.id,
+      user ? formatUserInfo(user) : USER_INFO_NOT_FOUND_MESSAGE,
+      { showAlert: true }
+    );
     return;
   }
 

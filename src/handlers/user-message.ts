@@ -43,23 +43,6 @@ interface Dependencies {
   now: string;
 }
 
-function formatSenderIdentity(message: Message): string {
-  const from = message.from;
-  const displayName = [from?.first_name, from?.last_name].filter(Boolean).join(" ") || "-";
-  const username = from?.username ? `@${from.username}` : "-";
-
-  return [
-    `From: ${displayName}`,
-    `Username: ${username}`,
-    `User ID: ${from?.id ?? "-"}`,
-    `Chat ID: ${message.chat.id}`,
-  ].join("\n");
-}
-
-function formatAdminTextMessage(message: Message): string {
-  return [formatSenderIdentity(message), "", message.text].join("\n");
-}
-
 function createAdminActionKeyboard(
   telegramUserId: number,
   telegramChatId: number
@@ -67,6 +50,7 @@ function createAdminActionKeyboard(
   return {
     inline_keyboard: [[
       { text: "Reply", callback_data: `fg:r:${telegramUserId}:${telegramChatId}` },
+      { text: "Info", callback_data: `fg:i:${telegramUserId}:${telegramChatId}` },
       { text: "Block", callback_data: `fg:b:${telegramUserId}:${telegramChatId}` },
       { text: "Unblock", callback_data: `fg:u:${telegramUserId}:${telegramChatId}` },
     ]],
@@ -94,7 +78,7 @@ export async function handleUserMessage(deps: Dependencies): Promise<void> {
   if (message.text) {
     const sent = await telegram.sendTextToAdmin(
       adminChatId,
-      formatAdminTextMessage(message),
+      message.text,
       keyboard
     );
 
