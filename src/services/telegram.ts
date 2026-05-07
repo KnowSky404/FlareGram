@@ -1,6 +1,8 @@
 import { Bot } from "grammy";
 import type { Message } from "grammy/types";
-import type { InlineKeyboardMarkup } from "grammy/types";
+import type { ForceReply, InlineKeyboardMarkup } from "grammy/types";
+
+type TextReplyMarkup = InlineKeyboardMarkup | ForceReply;
 
 export function createTelegramService(bot: Bot) {
   return {
@@ -16,7 +18,7 @@ export function createTelegramService(bot: Bot) {
     sendTextToAdmin(
       adminChatId: number,
       text: string,
-      replyMarkup?: InlineKeyboardMarkup
+      replyMarkup?: TextReplyMarkup
     ) {
       return bot.api.sendMessage(adminChatId, text, {
         reply_markup: replyMarkup,

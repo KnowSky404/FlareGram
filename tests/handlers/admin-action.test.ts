@@ -37,7 +37,8 @@ describe("handleAdminAction", () => {
 
     expect(telegram.sendTextToAdmin).toHaveBeenCalledWith(
       12345,
-      ADMIN_REPLY_PROMPT_MESSAGE
+      ADMIN_REPLY_PROMPT_MESSAGE,
+      { force_reply: true }
     );
     expect(links.insert).toHaveBeenCalledWith({
       adminChatId: 12345,

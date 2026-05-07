@@ -1,4 +1,4 @@
-import type { CallbackQuery } from "grammy/types";
+import type { CallbackQuery, ForceReply } from "grammy/types";
 import {
   ADMIN_BLOCKED_USER_MESSAGE,
   ADMIN_REPLY_PROMPT_MESSAGE,
@@ -12,7 +12,8 @@ interface Dependencies {
   telegram: {
     sendTextToAdmin(
       adminChatId: number,
-      text: string
+      text: string,
+      replyMarkup?: ForceReply
     ): Promise<{ message_id: number }>;
     answerCallback(callbackQueryId: string, text?: string): Promise<unknown>;
   };
@@ -65,7 +66,9 @@ export async function handleAdminAction(deps: Dependencies): Promise<void> {
   }
 
   if (parsed.action === "r") {
-    const prompt = await telegram.sendTextToAdmin(adminChatId, ADMIN_REPLY_PROMPT_MESSAGE);
+    const prompt = await telegram.sendTextToAdmin(adminChatId, ADMIN_REPLY_PROMPT_MESSAGE, {
+      force_reply: true,
+    });
     await links.insert({
       adminChatId,
       adminMessageId: prompt.message_id,
