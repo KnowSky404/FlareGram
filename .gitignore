@@ -19,6 +19,10 @@ logs/
 .env.*
 !.env.example
 !.env.sample
+.dev.vars
+.dev.vars.*
+worker-secrets.env
+wrangler.jsonc
 
 # Dependencies and package managers
 node_modules/
