@@ -45,11 +45,12 @@ interface Dependencies {
 
 function createAdminActionKeyboard(
   telegramUserId: number,
-  telegramChatId: number
+  telegramChatId: number,
+  userMessageId: number
 ): InlineKeyboardMarkup {
   return {
     inline_keyboard: [[
-      { text: "Reply", callback_data: `fg:r:${telegramUserId}:${telegramChatId}` },
+      { text: "Reply", callback_data: `fg:r:${telegramUserId}:${telegramChatId}:${userMessageId}` },
       { text: "Info", callback_data: `fg:i:${telegramUserId}:${telegramChatId}` },
       { text: "Block", callback_data: `fg:b:${telegramUserId}:${telegramChatId}` },
       { text: "Unblock", callback_data: `fg:u:${telegramUserId}:${telegramChatId}` },
@@ -73,7 +74,11 @@ export async function handleUserMessage(deps: Dependencies): Promise<void> {
     now,
   });
 
-  const keyboard = createAdminActionKeyboard(message.from.id, message.chat.id);
+  const keyboard = createAdminActionKeyboard(
+    message.from.id,
+    message.chat.id,
+    message.message_id
+  );
 
   if (message.text) {
     const sent = await telegram.sendTextToAdmin(

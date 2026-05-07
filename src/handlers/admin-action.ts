@@ -24,6 +24,7 @@ interface Dependencies {
       adminChatId: number;
       telegramUserId: number;
       userChatId: number;
+      userMessageId: number;
       updatedAt: string;
     }): Promise<void>;
   };
@@ -43,7 +44,7 @@ interface Dependencies {
 }
 
 function parseAction(data: string | undefined) {
-  const match = data?.match(/^fg:([ribu]):(-?\d+):(-?\d+)$/);
+  const match = data?.match(/^fg:([ribu]):(-?\d+):(-?\d+)(?::(\d+))?$/);
   if (!match) {
     return null;
   }
@@ -52,6 +53,7 @@ function parseAction(data: string | undefined) {
     action: match[1],
     telegramUserId: Number(match[2]),
     telegramChatId: Number(match[3]),
+    userMessageId: match[4] ? Number(match[4]) : undefined,
   };
 }
 
@@ -90,10 +92,16 @@ export async function handleAdminAction(deps: Dependencies): Promise<void> {
   }
 
   if (parsed.action === "r") {
+    if (parsed.userMessageId === undefined) {
+      await telegram.answerCallback(callbackQuery.id, ADMIN_ROUTE_NOT_FOUND_MESSAGE);
+      return;
+    }
+
     await replyTargets.set({
       adminChatId,
       telegramUserId: parsed.telegramUserId,
       userChatId: parsed.telegramChatId,
+      userMessageId: parsed.userMessageId,
       updatedAt: now,
     });
     await telegram.answerCallback(callbackQuery.id, ADMIN_REPLY_TARGET_SELECTED_MESSAGE);

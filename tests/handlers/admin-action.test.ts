@@ -30,7 +30,7 @@ describe("handleAdminAction", () => {
       callbackQuery: {
         id: "callback-1",
         from: { id: 12345, is_bot: false, first_name: "Admin" },
-        data: "fg:r:456:777",
+        data: "fg:r:456:777:8",
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
@@ -44,6 +44,7 @@ describe("handleAdminAction", () => {
       adminChatId: 12345,
       telegramUserId: 456,
       userChatId: 777,
+      userMessageId: 8,
       updatedAt: "2026-05-07T00:00:00.000Z",
     });
     expect(telegram.sendTextToAdmin).not.toHaveBeenCalled();

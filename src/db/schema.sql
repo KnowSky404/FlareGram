@@ -35,5 +35,6 @@ CREATE TABLE IF NOT EXISTS admin_reply_targets (
   admin_chat_id INTEGER PRIMARY KEY,
   telegram_user_id INTEGER NOT NULL,
   user_chat_id INTEGER NOT NULL,
+  user_message_id INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL
 );

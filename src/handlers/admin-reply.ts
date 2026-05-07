@@ -10,19 +10,31 @@ interface Dependencies {
   adminChatId: number;
   message: Message;
   telegram: {
-    copyReplyToUser(userChatId: number, message: Message): Promise<unknown>;
+    copyReplyToUser(
+      userChatId: number,
+      message: Message,
+      replyToMessageId: number
+    ): Promise<unknown>;
     sendText(chatId: number, text: string): Promise<unknown>;
   };
   links: {
     findByAdminMessage(
       adminChatId: number,
       adminMessageId: number
-    ): Promise<{ user_telegram_id?: number; user_chat_id: number } | null>;
+    ): Promise<{
+      user_telegram_id?: number;
+      user_chat_id: number;
+      user_message_id: number;
+    } | null>;
   };
   replyTargets: {
     consume(
       adminChatId: number
-    ): Promise<{ telegramUserId: number; userChatId: number } | null>;
+    ): Promise<{
+      telegramUserId: number;
+      userChatId: number;
+      userMessageId: number;
+    } | null>;
   };
   blockedUsers: {
     block(input: {
@@ -50,6 +62,7 @@ export async function handleAdminReply(deps: Dependencies): Promise<void> {
           ? {
               user_telegram_id: target.telegramUserId,
               user_chat_id: target.userChatId,
+              user_message_id: target.userMessageId,
             }
           : null
       );
@@ -90,7 +103,7 @@ export async function handleAdminReply(deps: Dependencies): Promise<void> {
   }
 
   try {
-    await telegram.copyReplyToUser(route.user_chat_id, message);
+    await telegram.copyReplyToUser(route.user_chat_id, message, route.user_message_id);
   } catch {
     await telegram.sendText(adminChatId, ADMIN_DELIVERY_FAILED_MESSAGE);
   }

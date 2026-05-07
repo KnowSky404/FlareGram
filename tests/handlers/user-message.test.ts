@@ -36,7 +36,7 @@ describe("handleUserMessage", () => {
       "hello",
       expect.objectContaining({
         inline_keyboard: [[
-          { text: "Reply", callback_data: "fg:r:456:777" },
+          { text: "Reply", callback_data: "fg:r:456:777:8" },
           { text: "Info", callback_data: "fg:i:456:777" },
           { text: "Block", callback_data: "fg:b:456:777" },
           { text: "Unblock", callback_data: "fg:u:456:777" },
@@ -92,7 +92,7 @@ describe("handleUserMessage", () => {
       expect.objectContaining({ message_id: 9 }),
       expect.objectContaining({
         inline_keyboard: [[
-          { text: "Reply", callback_data: "fg:r:457:778" },
+          { text: "Reply", callback_data: "fg:r:457:778:9" },
           { text: "Info", callback_data: "fg:i:457:778" },
           { text: "Block", callback_data: "fg:b:457:778" },
           { text: "Unblock", callback_data: "fg:u:457:778" },

@@ -11,6 +11,7 @@ describe("admin reply target repository", () => {
       adminChatId: 1,
       telegramUserId: 900,
       userChatId: 300,
+      userMessageId: 400,
       updatedAt: "2026-05-07T00:00:00.000Z",
     });
 
@@ -21,6 +22,7 @@ describe("admin reply target repository", () => {
       adminChatId: 1,
       telegramUserId: 900,
       userChatId: 300,
+      userMessageId: 400,
       updatedAt: "2026-05-07T00:00:00.000Z",
     });
     expect(consumedAgain).toBeNull();
@@ -34,12 +36,14 @@ describe("admin reply target repository", () => {
       adminChatId: 1,
       telegramUserId: 900,
       userChatId: 300,
+      userMessageId: 400,
       updatedAt: "2026-05-07T00:00:00.000Z",
     });
     await repo.set({
       adminChatId: 1,
       telegramUserId: 901,
       userChatId: 301,
+      userMessageId: 401,
       updatedAt: "2026-05-07T00:00:01.000Z",
     });
 
@@ -49,6 +53,7 @@ describe("admin reply target repository", () => {
       adminChatId: 1,
       telegramUserId: 901,
       userChatId: 301,
+      userMessageId: 401,
       updatedAt: "2026-05-07T00:00:01.000Z",
     });
   });

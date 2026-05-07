@@ -27,8 +27,17 @@ export function createTelegramService(bot: Bot) {
     sendText(chatId: number, text: string) {
       return bot.api.sendMessage(chatId, text);
     },
-    copyReplyToUser(userChatId: number, message: Message) {
-      return bot.api.copyMessage(userChatId, message.chat.id, message.message_id);
+    copyReplyToUser(
+      userChatId: number,
+      message: Message,
+      replyToMessageId: number
+    ) {
+      return bot.api.copyMessage(userChatId, message.chat.id, message.message_id, {
+        reply_parameters: {
+          message_id: replyToMessageId,
+          allow_sending_without_reply: true,
+        },
+      });
     },
     answerCallback(
       callbackQueryId: string,

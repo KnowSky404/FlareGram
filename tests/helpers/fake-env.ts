@@ -147,7 +147,8 @@ export function createStubD1Database() {
         }
 
         if (query.includes("INSERT INTO admin_reply_targets")) {
-          const [adminChatId, telegramUserId, userChatId, updatedAt] = values as [
+          const [adminChatId, telegramUserId, userChatId, userMessageId, updatedAt] = values as [
+            number,
             number,
             number,
             number,
@@ -157,6 +158,7 @@ export function createStubD1Database() {
             admin_chat_id: adminChatId,
             telegram_user_id: telegramUserId,
             user_chat_id: userChatId,
+            user_message_id: userMessageId,
             updated_at: updatedAt,
           });
           return createD1Result<T>();

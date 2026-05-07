@@ -17,6 +17,7 @@ describe("handleAdminReply", () => {
       findByAdminMessage: vi.fn().mockResolvedValue({
         user_telegram_id: 456,
         user_chat_id: 777,
+        user_message_id: 8,
       }),
     };
     const replyTargets = {
@@ -45,7 +46,8 @@ describe("handleAdminReply", () => {
     expect(links.findByAdminMessage).toHaveBeenCalledWith(12345, 99);
     expect(telegram.copyReplyToUser).toHaveBeenCalledWith(
       777,
-      expect.objectContaining({ message_id: 10 })
+      expect.objectContaining({ message_id: 10 }),
+      8
     );
     expect(blockedUsers.block).not.toHaveBeenCalled();
     expect(replyTargets.consume).not.toHaveBeenCalled();
@@ -64,6 +66,7 @@ describe("handleAdminReply", () => {
       consume: vi.fn().mockResolvedValue({
         telegramUserId: 456,
         userChatId: 777,
+        userMessageId: 8,
       }),
     };
     const blockedUsers = {
@@ -89,7 +92,8 @@ describe("handleAdminReply", () => {
     expect(links.findByAdminMessage).not.toHaveBeenCalled();
     expect(telegram.copyReplyToUser).toHaveBeenCalledWith(
       777,
-      expect.objectContaining({ message_id: 10 })
+      expect.objectContaining({ message_id: 10 }),
+      8
     );
   });
 
