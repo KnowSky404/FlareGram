@@ -10,8 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "cf-typegen": "wrangler types",
-    "db:migrate:local": "wrangler d1 execute DB --local --file=src/db/migrations/0001_initial.sql",
-    "db:migrate:remote": "wrangler d1 execute DB --remote --file=src/db/migrations/0001_initial.sql"
+    "db:migrate:local": "wrangler d1 execute DB --local --file=src/db/schema.sql",
+    "db:migrate:remote": "wrangler d1 execute DB --remote --file=src/db/schema.sql"
   },
   "dependencies": {
     "grammy": "^1.38.3"
