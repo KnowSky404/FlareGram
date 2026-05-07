@@ -6,11 +6,13 @@ describe("handleUserMessage", () => {
   it("copies a user message to admin and stores the route mapping", async () => {
     const telegram = {
       copyMessageToAdmin: vi.fn().mockResolvedValue({ message_id: 999 }),
+      sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 998 }),
       sendText: vi.fn().mockResolvedValue(undefined),
     };
 
     const users = { upsert: vi.fn().mockResolvedValue(undefined) };
     const links = { insert: vi.fn().mockResolvedValue(undefined) };
+    const blockedUsers = { isBlocked: vi.fn().mockResolvedValue(false) };
 
     await handleUserMessage({
       adminChatId: 12345,
@@ -23,12 +25,25 @@ describe("handleUserMessage", () => {
       telegram,
       users,
       links,
+      blockedUsers,
       now: "2026-04-27T00:00:00.000Z",
     });
 
+    expect(blockedUsers.isBlocked).toHaveBeenCalledWith(456);
     expect(telegram.copyMessageToAdmin).toHaveBeenCalledWith(
       12345,
       expect.objectContaining({ message_id: 8 })
+    );
+    expect(telegram.sendTextToAdmin).toHaveBeenCalledWith(
+      12345,
+      [
+        "From: Alice",
+        "Username: -",
+        "User ID: 456",
+        "Chat ID: 777",
+        "",
+        "Reply here with /block or /unblock.",
+      ].join("\n")
     );
     expect(users.upsert).toHaveBeenCalledWith({
       telegramUserId: 456,
@@ -38,7 +53,14 @@ describe("handleUserMessage", () => {
       lastName: undefined,
       now: "2026-04-27T00:00:00.000Z",
     });
-    expect(links.insert).toHaveBeenCalledWith({
+    expect(links.insert).toHaveBeenNthCalledWith(1, {
+      adminChatId: 12345,
+      adminMessageId: 998,
+      userChatId: 777,
+      userMessageId: 8,
+      createdAt: "2026-04-27T00:00:00.000Z",
+    });
+    expect(links.insert).toHaveBeenNthCalledWith(2, {
       adminChatId: 12345,
       adminMessageId: 999,
       userChatId: 777,
@@ -50,11 +72,13 @@ describe("handleUserMessage", () => {
   it("copies sticker messages to admin and stores the route mapping", async () => {
     const telegram = {
       copyMessageToAdmin: vi.fn().mockResolvedValue({ message_id: 1001 }),
+      sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 1000 }),
       sendText: vi.fn().mockResolvedValue(undefined),
     };
 
     const users = { upsert: vi.fn().mockResolvedValue(undefined) };
     const links = { insert: vi.fn().mockResolvedValue(undefined) };
+    const blockedUsers = { isBlocked: vi.fn().mockResolvedValue(false) };
 
     await handleUserMessage({
       adminChatId: 12345,
@@ -67,6 +91,7 @@ describe("handleUserMessage", () => {
       telegram,
       users,
       links,
+      blockedUsers,
       now: "2026-04-27T00:00:01.000Z",
     });
 
@@ -75,7 +100,14 @@ describe("handleUserMessage", () => {
       expect.objectContaining({ message_id: 9 })
     );
     expect(telegram.sendText).not.toHaveBeenCalled();
-    expect(links.insert).toHaveBeenCalledWith({
+    expect(links.insert).toHaveBeenNthCalledWith(1, {
+      adminChatId: 12345,
+      adminMessageId: 1000,
+      userChatId: 778,
+      userMessageId: 9,
+      createdAt: "2026-04-27T00:00:01.000Z",
+    });
+    expect(links.insert).toHaveBeenNthCalledWith(2, {
       adminChatId: 12345,
       adminMessageId: 1001,
       userChatId: 778,
@@ -87,11 +119,13 @@ describe("handleUserMessage", () => {
   it("notifies the user when Telegram cannot copy the message", async () => {
     const telegram = {
       copyMessageToAdmin: vi.fn().mockRejectedValue(new Error("unsupported")),
+      sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 1002 }),
       sendText: vi.fn().mockResolvedValue(undefined),
     };
 
     const users = { upsert: vi.fn().mockResolvedValue(undefined) };
     const links = { insert: vi.fn().mockResolvedValue(undefined) };
+    const blockedUsers = { isBlocked: vi.fn().mockResolvedValue(false) };
 
     await handleUserMessage({
       adminChatId: 12345,
@@ -104,10 +138,45 @@ describe("handleUserMessage", () => {
       telegram,
       users,
       links,
+      blockedUsers,
       now: "2026-04-27T00:00:02.000Z",
     });
 
     expect(telegram.sendText).toHaveBeenCalledWith(779, UNSUPPORTED_MESSAGE_NOTICE);
+    expect(users.upsert).toHaveBeenCalled();
+    expect(links.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it("silently ignores blocked users", async () => {
+    const telegram = {
+      copyMessageToAdmin: vi.fn().mockResolvedValue({ message_id: 1003 }),
+      sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 1002 }),
+      sendText: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const users = { upsert: vi.fn().mockResolvedValue(undefined) };
+    const links = { insert: vi.fn().mockResolvedValue(undefined) };
+    const blockedUsers = { isBlocked: vi.fn().mockResolvedValue(true) };
+
+    await handleUserMessage({
+      adminChatId: 12345,
+      message: {
+        message_id: 11,
+        chat: { id: 780, type: "private" },
+        from: { id: 459, is_bot: false, first_name: "Dan" },
+        text: "hello?",
+      } as never,
+      telegram,
+      users,
+      links,
+      blockedUsers,
+      now: "2026-04-27T00:00:03.000Z",
+    });
+
+    expect(blockedUsers.isBlocked).toHaveBeenCalledWith(459);
+    expect(telegram.sendText).not.toHaveBeenCalled();
+    expect(telegram.sendTextToAdmin).not.toHaveBeenCalled();
+    expect(telegram.copyMessageToAdmin).not.toHaveBeenCalled();
     expect(users.upsert).not.toHaveBeenCalled();
     expect(links.insert).not.toHaveBeenCalled();
   });

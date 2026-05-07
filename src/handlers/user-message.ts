@@ -9,6 +9,10 @@ interface Dependencies {
       adminChatId: number,
       message: Message
     ): Promise<{ message_id: number }>;
+    sendTextToAdmin(
+      adminChatId: number,
+      text: string
+    ): Promise<{ message_id: number }>;
     sendText(chatId: number, text: string): Promise<unknown>;
   };
   users: {
@@ -30,11 +34,55 @@ interface Dependencies {
       createdAt: string;
     }): Promise<void>;
   };
+  blockedUsers: {
+    isBlocked(telegramUserId: number): Promise<boolean>;
+  };
   now: string;
 }
 
+function formatSenderIdentity(message: Message): string {
+  const from = message.from;
+  const displayName = [from?.first_name, from?.last_name].filter(Boolean).join(" ") || "-";
+  const username = from?.username ? `@${from.username}` : "-";
+
+  return [
+    `From: ${displayName}`,
+    `Username: ${username}`,
+    `User ID: ${from?.id ?? "-"}`,
+    `Chat ID: ${message.chat.id}`,
+    "",
+    "Reply here with /block or /unblock.",
+  ].join("\n");
+}
+
 export async function handleUserMessage(deps: Dependencies): Promise<void> {
-  const { adminChatId, message, telegram, users, links, now } = deps;
+  const { adminChatId, message, telegram, users, links, blockedUsers, now } = deps;
+
+  if (!message.from || await blockedUsers.isBlocked(message.from.id)) {
+    return;
+  }
+
+  await users.upsert({
+    telegramUserId: message.from.id,
+    telegramChatId: message.chat.id,
+    username: message.from.username,
+    firstName: message.from.first_name,
+    lastName: message.from.last_name,
+    now,
+  });
+
+  const identity = await telegram.sendTextToAdmin(
+    adminChatId,
+    formatSenderIdentity(message)
+  );
+
+  await links.insert({
+    adminChatId,
+    adminMessageId: identity.message_id,
+    userChatId: message.chat.id,
+    userMessageId: message.message_id,
+    createdAt: now,
+  });
 
   let copied: { message_id: number };
   try {
@@ -43,15 +91,6 @@ export async function handleUserMessage(deps: Dependencies): Promise<void> {
     await telegram.sendText(message.chat.id, UNSUPPORTED_MESSAGE_NOTICE);
     return;
   }
-
-  await users.upsert({
-    telegramUserId: message.from!.id,
-    telegramChatId: message.chat.id,
-    username: message.from?.username,
-    firstName: message.from?.first_name,
-    lastName: message.from?.last_name,
-    now,
-  });
 
   await links.insert({
     adminChatId,

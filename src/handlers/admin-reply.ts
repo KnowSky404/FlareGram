@@ -1,7 +1,9 @@
 import type { Message } from "grammy/types";
 import {
+  ADMIN_BLOCKED_USER_MESSAGE,
   ADMIN_DELIVERY_FAILED_MESSAGE,
   ADMIN_ROUTE_NOT_FOUND_MESSAGE,
+  ADMIN_UNBLOCKED_USER_MESSAGE,
 } from "../lib/constants";
 
 interface Dependencies {
@@ -15,12 +17,22 @@ interface Dependencies {
     findByAdminMessage(
       adminChatId: number,
       adminMessageId: number
-    ): Promise<{ user_chat_id: number } | null>;
+    ): Promise<{ user_telegram_id?: number; user_chat_id: number } | null>;
   };
+  blockedUsers: {
+    block(input: {
+      telegramUserId: number;
+      telegramChatId: number;
+      blockedByChatId: number;
+      now: string;
+    }): Promise<void>;
+    unblock(telegramUserId: number): Promise<void>;
+  };
+  now: string;
 }
 
 export async function handleAdminReply(deps: Dependencies): Promise<void> {
-  const { adminChatId, message, telegram, links } = deps;
+  const { adminChatId, message, telegram, links, blockedUsers, now } = deps;
 
   if (message.chat.id !== adminChatId || !message.reply_to_message) {
     return;
@@ -33,6 +45,34 @@ export async function handleAdminReply(deps: Dependencies): Promise<void> {
 
   if (!route) {
     await telegram.sendText(adminChatId, ADMIN_ROUTE_NOT_FOUND_MESSAGE);
+    return;
+  }
+
+  const command = message.text?.trim().split(/\s+/, 1)[0]?.toLowerCase();
+  if (command === "/block") {
+    if (route.user_telegram_id === undefined) {
+      await telegram.sendText(adminChatId, ADMIN_ROUTE_NOT_FOUND_MESSAGE);
+      return;
+    }
+
+    await blockedUsers.block({
+      telegramUserId: route.user_telegram_id,
+      telegramChatId: route.user_chat_id,
+      blockedByChatId: adminChatId,
+      now,
+    });
+    await telegram.sendText(adminChatId, ADMIN_BLOCKED_USER_MESSAGE);
+    return;
+  }
+
+  if (command === "/unblock") {
+    if (route.user_telegram_id === undefined) {
+      await telegram.sendText(adminChatId, ADMIN_ROUTE_NOT_FOUND_MESSAGE);
+      return;
+    }
+
+    await blockedUsers.unblock(route.user_telegram_id);
+    await telegram.sendText(adminChatId, ADMIN_UNBLOCKED_USER_MESSAGE);
     return;
   }
 

@@ -23,3 +23,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_message_links_admin_message
 
 CREATE INDEX IF NOT EXISTS idx_message_links_user_created
   ON message_links (user_chat_id, created_at);
+
+CREATE TABLE IF NOT EXISTS blocked_users (
+  telegram_user_id INTEGER PRIMARY KEY,
+  telegram_chat_id INTEGER NOT NULL,
+  blocked_by_chat_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);

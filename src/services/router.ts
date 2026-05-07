@@ -2,6 +2,7 @@ import type { Context } from "grammy";
 import { handleAdminReply } from "../handlers/admin-reply";
 import { handleUserMessage } from "../handlers/user-message";
 import { createMessageLinkRepository } from "../repositories/message-links";
+import { createBlockedUserRepository } from "../repositories/blocked-users";
 import { createUserRepository } from "../repositories/users";
 import { createTelegramService } from "./telegram";
 import type { Env } from "../types/env";
@@ -11,6 +12,7 @@ export function createRouter(env: Env, bot: { api: unknown }) {
   const telegram = createTelegramService(bot as never);
   const users = createUserRepository(env.DB);
   const links = createMessageLinkRepository(env.DB);
+  const blockedUsers = createBlockedUserRepository(env.DB);
 
   return {
     async route(ctx: Context) {
@@ -25,6 +27,8 @@ export function createRouter(env: Env, bot: { api: unknown }) {
           message,
           telegram,
           links,
+          blockedUsers,
+          now,
         });
         return;
       }
@@ -36,6 +40,7 @@ export function createRouter(env: Env, bot: { api: unknown }) {
           telegram,
           users,
           links,
+          blockedUsers,
           now,
         });
       }

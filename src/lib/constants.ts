@@ -6,3 +6,7 @@ export const ADMIN_DELIVERY_FAILED_MESSAGE =
 
 export const UNSUPPORTED_MESSAGE_NOTICE =
   "This message type is not supported in the current MVP.";
+
+export const ADMIN_BLOCKED_USER_MESSAGE = "User has been blocked.";
+
+export const ADMIN_UNBLOCKED_USER_MESSAGE = "User has been unblocked.";

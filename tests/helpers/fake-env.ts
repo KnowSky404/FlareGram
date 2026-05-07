@@ -23,6 +23,8 @@ function createExecResult(): D1ExecResult {
 
 export function createStubD1Database() {
   const messageLinks = new Map<string, Record<string, number | string>>();
+  const usersByChatId = new Map<number, Record<string, number | string | null>>();
+  const blockedUsers = new Map<number, Record<string, number | string>>();
 
   function createRaw(query: string): D1PreparedStatement["raw"] {
     return (async <T = unknown[]>(options?: {
@@ -44,12 +46,55 @@ export function createStubD1Database() {
       async first<T = Record<string, unknown>>(_colName?: string): Promise<T | null> {
         if (query.includes("FROM message_links")) {
           const [adminChatId, adminMessageId] = values as [number, number];
-          return (messageLinks.get(`${adminChatId}:${adminMessageId}`) as T | null) ?? null;
+          const link = messageLinks.get(`${adminChatId}:${adminMessageId}`);
+          if (!link) return null;
+
+          const user = usersByChatId.get(link.user_chat_id as number);
+          return {
+            ...link,
+            user_telegram_id: user?.telegram_user_id,
+          } as T;
+        }
+
+        if (query.includes("FROM blocked_users")) {
+          const [telegramUserId] = values as [number];
+          return (blockedUsers.get(telegramUserId) as T | null) ?? null;
         }
 
         throw new Error(`Unsupported first query: ${query}`);
       },
       async run<T = Record<string, unknown>>(): Promise<D1Result<T>> {
+        if (query.includes("INSERT INTO users")) {
+          const [
+            telegramUserId,
+            telegramChatId,
+            username,
+            firstName,
+            lastName,
+            createdAt,
+            updatedAt,
+          ] = values as [
+            number,
+            number,
+            string | null,
+            string | null,
+            string | null,
+            string,
+            string,
+          ];
+          const existing = usersByChatId.get(telegramChatId);
+          usersByChatId.set(telegramChatId, {
+            telegram_user_id: telegramUserId,
+            telegram_chat_id: telegramChatId,
+            username,
+            first_name: firstName,
+            last_name: lastName,
+            created_at: existing?.created_at ?? createdAt,
+            updated_at: updatedAt,
+          });
+          return createD1Result<T>();
+        }
+
         if (query.includes("INSERT INTO message_links")) {
           const [adminChatId, adminMessageId, userChatId, userMessageId, createdAt] = values as [
             number,
@@ -66,6 +111,28 @@ export function createStubD1Database() {
             direction: "user_to_admin",
             created_at: createdAt,
           });
+          return createD1Result<T>();
+        }
+
+        if (query.includes("INSERT INTO blocked_users")) {
+          const [telegramUserId, telegramChatId, blockedByChatId, createdAt] = values as [
+            number,
+            number,
+            number,
+            string,
+          ];
+          blockedUsers.set(telegramUserId, {
+            telegram_user_id: telegramUserId,
+            telegram_chat_id: telegramChatId,
+            blocked_by_chat_id: blockedByChatId,
+            created_at: createdAt,
+          });
+          return createD1Result<T>();
+        }
+
+        if (query.includes("DELETE FROM blocked_users")) {
+          const [telegramUserId] = values as [number];
+          blockedUsers.delete(telegramUserId);
           return createD1Result<T>();
         }
 
@@ -107,7 +174,7 @@ export function createStubD1Database() {
   };
 
   return {
-    rawState: { messageLinks },
+    rawState: { messageLinks, usersByChatId, blockedUsers },
     db,
   };
 }
