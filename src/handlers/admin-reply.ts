@@ -19,6 +19,11 @@ interface Dependencies {
       adminMessageId: number
     ): Promise<{ user_telegram_id?: number; user_chat_id: number } | null>;
   };
+  replyTargets: {
+    consume(
+      adminChatId: number
+    ): Promise<{ telegramUserId: number; userChatId: number } | null>;
+  };
   blockedUsers: {
     block(input: {
       telegramUserId: number;
@@ -32,19 +37,27 @@ interface Dependencies {
 }
 
 export async function handleAdminReply(deps: Dependencies): Promise<void> {
-  const { adminChatId, message, telegram, links, blockedUsers, now } = deps;
+  const { adminChatId, message, telegram, links, replyTargets, blockedUsers, now } = deps;
 
-  if (message.chat.id !== adminChatId || !message.reply_to_message) {
+  if (message.chat.id !== adminChatId) {
     return;
   }
 
-  const route = await links.findByAdminMessage(
-    adminChatId,
-    message.reply_to_message.message_id
-  );
+  const route = message.reply_to_message
+    ? await links.findByAdminMessage(adminChatId, message.reply_to_message.message_id)
+    : await replyTargets.consume(adminChatId).then((target) =>
+        target
+          ? {
+              user_telegram_id: target.telegramUserId,
+              user_chat_id: target.userChatId,
+            }
+          : null
+      );
 
   if (!route) {
-    await telegram.sendText(adminChatId, ADMIN_ROUTE_NOT_FOUND_MESSAGE);
+    if (message.reply_to_message) {
+      await telegram.sendText(adminChatId, ADMIN_ROUTE_NOT_FOUND_MESSAGE);
+    }
     return;
   }
 

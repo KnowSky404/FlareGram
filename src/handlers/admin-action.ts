@@ -1,7 +1,7 @@
-import type { CallbackQuery, ForceReply } from "grammy/types";
+import type { CallbackQuery } from "grammy/types";
 import {
   ADMIN_BLOCKED_USER_MESSAGE,
-  ADMIN_REPLY_PROMPT_MESSAGE,
+  ADMIN_REPLY_TARGET_SELECTED_MESSAGE,
   ADMIN_ROUTE_NOT_FOUND_MESSAGE,
   ADMIN_UNBLOCKED_USER_MESSAGE,
   USER_INFO_NOT_FOUND_MESSAGE,
@@ -12,24 +12,19 @@ interface Dependencies {
   adminChatId: number;
   callbackQuery: CallbackQuery;
   telegram: {
-    sendTextToAdmin(
-      adminChatId: number,
-      text: string,
-      replyMarkup?: ForceReply
-    ): Promise<{ message_id: number }>;
+    sendTextToAdmin(adminChatId: number, text: string): Promise<{ message_id: number }>;
     answerCallback(
       callbackQueryId: string,
       text?: string,
       options?: { showAlert?: boolean }
     ): Promise<unknown>;
   };
-  links: {
-    insert(input: {
+  replyTargets: {
+    set(input: {
       adminChatId: number;
-      adminMessageId: number;
+      telegramUserId: number;
       userChatId: number;
-      userMessageId: number;
-      createdAt: string;
+      updatedAt: string;
     }): Promise<void>;
   };
   blockedUsers: {
@@ -73,7 +68,15 @@ function formatUserInfo(user: UserRecord): string {
 }
 
 export async function handleAdminAction(deps: Dependencies): Promise<void> {
-  const { adminChatId, callbackQuery, telegram, links, blockedUsers, users, now } = deps;
+  const {
+    adminChatId,
+    callbackQuery,
+    telegram,
+    replyTargets,
+    blockedUsers,
+    users,
+    now,
+  } = deps;
 
   if (callbackQuery.from.id !== adminChatId) {
     await telegram.answerCallback(callbackQuery.id);
@@ -87,17 +90,13 @@ export async function handleAdminAction(deps: Dependencies): Promise<void> {
   }
 
   if (parsed.action === "r") {
-    const prompt = await telegram.sendTextToAdmin(adminChatId, ADMIN_REPLY_PROMPT_MESSAGE, {
-      force_reply: true,
-    });
-    await links.insert({
+    await replyTargets.set({
       adminChatId,
-      adminMessageId: prompt.message_id,
+      telegramUserId: parsed.telegramUserId,
       userChatId: parsed.telegramChatId,
-      userMessageId: 0,
-      createdAt: now,
+      updatedAt: now,
     });
-    await telegram.answerCallback(callbackQuery.id, "Reply prompt created.");
+    await telegram.answerCallback(callbackQuery.id, ADMIN_REPLY_TARGET_SELECTED_MESSAGE);
     return;
   }
 

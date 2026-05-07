@@ -23,6 +23,7 @@ function createExecResult(): D1ExecResult {
 
 export function createStubD1Database() {
   const messageLinks = new Map<string, Record<string, number | string>>();
+  const adminReplyTargets = new Map<number, Record<string, number | string>>();
   const usersByChatId = new Map<number, Record<string, number | string | null>>();
   const blockedUsers = new Map<number, Record<string, number | string>>();
 
@@ -59,6 +60,11 @@ export function createStubD1Database() {
         if (query.includes("FROM blocked_users")) {
           const [telegramUserId] = values as [number];
           return (blockedUsers.get(telegramUserId) as T | null) ?? null;
+        }
+
+        if (query.includes("FROM admin_reply_targets")) {
+          const [adminChatId] = values as [number];
+          return (adminReplyTargets.get(adminChatId) as T | null) ?? null;
         }
 
         if (query.includes("FROM users")) {
@@ -140,9 +146,31 @@ export function createStubD1Database() {
           return createD1Result<T>();
         }
 
+        if (query.includes("INSERT INTO admin_reply_targets")) {
+          const [adminChatId, telegramUserId, userChatId, updatedAt] = values as [
+            number,
+            number,
+            number,
+            string,
+          ];
+          adminReplyTargets.set(adminChatId, {
+            admin_chat_id: adminChatId,
+            telegram_user_id: telegramUserId,
+            user_chat_id: userChatId,
+            updated_at: updatedAt,
+          });
+          return createD1Result<T>();
+        }
+
         if (query.includes("DELETE FROM blocked_users")) {
           const [telegramUserId] = values as [number];
           blockedUsers.delete(telegramUserId);
+          return createD1Result<T>();
+        }
+
+        if (query.includes("DELETE FROM admin_reply_targets")) {
+          const [adminChatId] = values as [number];
+          adminReplyTargets.delete(adminChatId);
           return createD1Result<T>();
         }
 
@@ -184,7 +212,7 @@ export function createStubD1Database() {
   };
 
   return {
-    rawState: { messageLinks, usersByChatId, blockedUsers },
+    rawState: { messageLinks, adminReplyTargets, usersByChatId, blockedUsers },
     db,
   };
 }

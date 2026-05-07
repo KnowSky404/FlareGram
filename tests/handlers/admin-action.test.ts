@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ADMIN_BLOCKED_USER_MESSAGE,
-  ADMIN_REPLY_PROMPT_MESSAGE,
+  ADMIN_REPLY_TARGET_SELECTED_MESSAGE,
   ADMIN_ROUTE_NOT_FOUND_MESSAGE,
   ADMIN_UNBLOCKED_USER_MESSAGE,
   USER_INFO_NOT_FOUND_MESSAGE,
@@ -9,13 +9,13 @@ import {
 import { handleAdminAction } from "../../src/handlers/admin-action";
 
 describe("handleAdminAction", () => {
-  it("creates a reply prompt linked to the user", async () => {
+  it("selects a reply target from a reply button callback", async () => {
     const telegram = {
       sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 500 }),
       answerCallback: vi.fn().mockResolvedValue(undefined),
     };
-    const links = {
-      insert: vi.fn().mockResolvedValue(undefined),
+    const replyTargets = {
+      set: vi.fn().mockResolvedValue(undefined),
     };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
@@ -34,27 +34,22 @@ describe("handleAdminAction", () => {
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
-      links,
+      replyTargets,
       blockedUsers,
       users,
       now: "2026-05-07T00:00:00.000Z",
     });
 
-    expect(telegram.sendTextToAdmin).toHaveBeenCalledWith(
-      12345,
-      ADMIN_REPLY_PROMPT_MESSAGE,
-      { force_reply: true }
-    );
-    expect(links.insert).toHaveBeenCalledWith({
+    expect(replyTargets.set).toHaveBeenCalledWith({
       adminChatId: 12345,
-      adminMessageId: 500,
+      telegramUserId: 456,
       userChatId: 777,
-      userMessageId: 0,
-      createdAt: "2026-05-07T00:00:00.000Z",
+      updatedAt: "2026-05-07T00:00:00.000Z",
     });
+    expect(telegram.sendTextToAdmin).not.toHaveBeenCalled();
     expect(telegram.answerCallback).toHaveBeenCalledWith(
       "callback-1",
-      "Reply prompt created."
+      ADMIN_REPLY_TARGET_SELECTED_MESSAGE
     );
   });
 
@@ -63,8 +58,8 @@ describe("handleAdminAction", () => {
       sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 500 }),
       answerCallback: vi.fn().mockResolvedValue(undefined),
     };
-    const links = {
-      insert: vi.fn().mockResolvedValue(undefined),
+    const replyTargets = {
+      set: vi.fn().mockResolvedValue(undefined),
     };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
@@ -83,7 +78,7 @@ describe("handleAdminAction", () => {
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
-      links,
+      replyTargets,
       blockedUsers,
       users,
       now: "2026-05-07T00:00:01.000Z",
@@ -107,8 +102,8 @@ describe("handleAdminAction", () => {
       sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 500 }),
       answerCallback: vi.fn().mockResolvedValue(undefined),
     };
-    const links = {
-      insert: vi.fn().mockResolvedValue(undefined),
+    const replyTargets = {
+      set: vi.fn().mockResolvedValue(undefined),
     };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
@@ -127,7 +122,7 @@ describe("handleAdminAction", () => {
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
-      links,
+      replyTargets,
       blockedUsers,
       users,
       now: "2026-05-07T00:00:02.000Z",
@@ -145,8 +140,8 @@ describe("handleAdminAction", () => {
       sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 500 }),
       answerCallback: vi.fn().mockResolvedValue(undefined),
     };
-    const links = {
-      insert: vi.fn().mockResolvedValue(undefined),
+    const replyTargets = {
+      set: vi.fn().mockResolvedValue(undefined),
     };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
@@ -171,7 +166,7 @@ describe("handleAdminAction", () => {
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
-      links,
+      replyTargets,
       blockedUsers,
       users,
       now: "2026-05-07T00:00:02.500Z",
@@ -196,8 +191,8 @@ describe("handleAdminAction", () => {
       sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 500 }),
       answerCallback: vi.fn().mockResolvedValue(undefined),
     };
-    const links = {
-      insert: vi.fn().mockResolvedValue(undefined),
+    const replyTargets = {
+      set: vi.fn().mockResolvedValue(undefined),
     };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
@@ -216,7 +211,7 @@ describe("handleAdminAction", () => {
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
-      links,
+      replyTargets,
       blockedUsers,
       users,
       now: "2026-05-07T00:00:02.750Z",
@@ -234,8 +229,8 @@ describe("handleAdminAction", () => {
       sendTextToAdmin: vi.fn().mockResolvedValue({ message_id: 500 }),
       answerCallback: vi.fn().mockResolvedValue(undefined),
     };
-    const links = {
-      insert: vi.fn().mockResolvedValue(undefined),
+    const replyTargets = {
+      set: vi.fn().mockResolvedValue(undefined),
     };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
@@ -254,7 +249,7 @@ describe("handleAdminAction", () => {
         message: { message_id: 999, chat: { id: 12345, type: "private" } },
       } as never,
       telegram,
-      links,
+      replyTargets,
       blockedUsers,
       users,
       now: "2026-05-07T00:00:03.000Z",

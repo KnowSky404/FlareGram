@@ -19,6 +19,9 @@ describe("handleAdminReply", () => {
         user_chat_id: 777,
       }),
     };
+    const replyTargets = {
+      consume: vi.fn().mockResolvedValue(null),
+    };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
       unblock: vi.fn().mockResolvedValue(undefined),
@@ -34,6 +37,7 @@ describe("handleAdminReply", () => {
       } as never,
       telegram,
       links,
+      replyTargets,
       blockedUsers,
       now: "2026-04-27T00:00:00.000Z",
     });
@@ -44,6 +48,85 @@ describe("handleAdminReply", () => {
       expect.objectContaining({ message_id: 10 })
     );
     expect(blockedUsers.block).not.toHaveBeenCalled();
+    expect(replyTargets.consume).not.toHaveBeenCalled();
+  });
+
+  it("routes the next admin message to the selected reply target", async () => {
+    const telegram = {
+      copyReplyToUser: vi.fn().mockResolvedValue(undefined),
+      sendText: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const links = {
+      findByAdminMessage: vi.fn().mockResolvedValue(null),
+    };
+    const replyTargets = {
+      consume: vi.fn().mockResolvedValue({
+        telegramUserId: 456,
+        userChatId: 777,
+      }),
+    };
+    const blockedUsers = {
+      block: vi.fn().mockResolvedValue(undefined),
+      unblock: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await handleAdminReply({
+      adminChatId: 12345,
+      message: {
+        message_id: 10,
+        chat: { id: 12345, type: "private" },
+        text: "reply",
+      } as never,
+      telegram,
+      links,
+      replyTargets,
+      blockedUsers,
+      now: "2026-04-27T00:00:00.000Z",
+    });
+
+    expect(replyTargets.consume).toHaveBeenCalledWith(12345);
+    expect(links.findByAdminMessage).not.toHaveBeenCalled();
+    expect(telegram.copyReplyToUser).toHaveBeenCalledWith(
+      777,
+      expect.objectContaining({ message_id: 10 })
+    );
+  });
+
+  it("silently ignores an unlinked non-reply admin message", async () => {
+    const telegram = {
+      copyReplyToUser: vi.fn().mockResolvedValue(undefined),
+      sendText: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const links = {
+      findByAdminMessage: vi.fn().mockResolvedValue(null),
+    };
+    const replyTargets = {
+      consume: vi.fn().mockResolvedValue(null),
+    };
+    const blockedUsers = {
+      block: vi.fn().mockResolvedValue(undefined),
+      unblock: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await handleAdminReply({
+      adminChatId: 12345,
+      message: {
+        message_id: 10,
+        chat: { id: 12345, type: "private" },
+        text: "not a routed reply",
+      } as never,
+      telegram,
+      links,
+      replyTargets,
+      blockedUsers,
+      now: "2026-04-27T00:00:00.000Z",
+    });
+
+    expect(replyTargets.consume).toHaveBeenCalledWith(12345);
+    expect(telegram.sendText).not.toHaveBeenCalled();
+    expect(telegram.copyReplyToUser).not.toHaveBeenCalled();
   });
 
   it("notifies admin when mapping is missing", async () => {
@@ -55,6 +138,9 @@ describe("handleAdminReply", () => {
     const links = {
       findByAdminMessage: vi.fn().mockResolvedValue(null),
     };
+    const replyTargets = {
+      consume: vi.fn().mockResolvedValue(null),
+    };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
       unblock: vi.fn().mockResolvedValue(undefined),
@@ -70,6 +156,7 @@ describe("handleAdminReply", () => {
       } as never,
       telegram,
       links,
+      replyTargets,
       blockedUsers,
       now: "2026-04-27T00:00:00.000Z",
     });
@@ -93,6 +180,9 @@ describe("handleAdminReply", () => {
         user_chat_id: 777,
       }),
     };
+    const replyTargets = {
+      consume: vi.fn().mockResolvedValue(null),
+    };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
       unblock: vi.fn().mockResolvedValue(undefined),
@@ -108,6 +198,7 @@ describe("handleAdminReply", () => {
       } as never,
       telegram,
       links,
+      replyTargets,
       blockedUsers,
       now: "2026-04-27T00:00:01.000Z",
     });
@@ -137,6 +228,9 @@ describe("handleAdminReply", () => {
         user_chat_id: 777,
       }),
     };
+    const replyTargets = {
+      consume: vi.fn().mockResolvedValue(null),
+    };
     const blockedUsers = {
       block: vi.fn().mockResolvedValue(undefined),
       unblock: vi.fn().mockResolvedValue(undefined),
@@ -152,6 +246,7 @@ describe("handleAdminReply", () => {
       } as never,
       telegram,
       links,
+      replyTargets,
       blockedUsers,
       now: "2026-04-27T00:00:02.000Z",
     });

@@ -3,6 +3,7 @@ import { handleAdminAction } from "../handlers/admin-action";
 import { handleAdminReply } from "../handlers/admin-reply";
 import { handleUserMessage } from "../handlers/user-message";
 import { createMessageLinkRepository } from "../repositories/message-links";
+import { createAdminReplyTargetRepository } from "../repositories/admin-reply-targets";
 import { createBlockedUserRepository } from "../repositories/blocked-users";
 import { createUserRepository } from "../repositories/users";
 import { createTelegramService } from "./telegram";
@@ -13,6 +14,7 @@ export function createRouter(env: Env, bot: { api: unknown }) {
   const telegram = createTelegramService(bot as never);
   const users = createUserRepository(env.DB);
   const links = createMessageLinkRepository(env.DB);
+  const replyTargets = createAdminReplyTargetRepository(env.DB);
   const blockedUsers = createBlockedUserRepository(env.DB);
 
   return {
@@ -23,7 +25,7 @@ export function createRouter(env: Env, bot: { api: unknown }) {
           adminChatId,
           callbackQuery,
           telegram,
-          links,
+          replyTargets,
           blockedUsers,
           users,
           now: new Date().toISOString(),
@@ -42,6 +44,7 @@ export function createRouter(env: Env, bot: { api: unknown }) {
           message,
           telegram,
           links,
+          replyTargets,
           blockedUsers,
           now,
         });
