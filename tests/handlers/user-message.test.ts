@@ -30,10 +30,7 @@ describe("handleUserMessage", () => {
     });
 
     expect(blockedUsers.isBlocked).toHaveBeenCalledWith(456);
-    expect(telegram.copyMessageToAdmin).toHaveBeenCalledWith(
-      12345,
-      expect.objectContaining({ message_id: 8 })
-    );
+    expect(telegram.copyMessageToAdmin).not.toHaveBeenCalled();
     expect(telegram.sendTextToAdmin).toHaveBeenCalledWith(
       12345,
       [
@@ -42,8 +39,15 @@ describe("handleUserMessage", () => {
         "User ID: 456",
         "Chat ID: 777",
         "",
-        "Reply here with /block or /unblock.",
-      ].join("\n")
+        "hello",
+      ].join("\n"),
+      expect.objectContaining({
+        inline_keyboard: [[
+          { text: "Reply", callback_data: "fg:r:456:777" },
+          { text: "Block", callback_data: "fg:b:456:777" },
+          { text: "Unblock", callback_data: "fg:u:456:777" },
+        ]],
+      })
     );
     expect(users.upsert).toHaveBeenCalledWith({
       telegramUserId: 456,
@@ -53,16 +57,10 @@ describe("handleUserMessage", () => {
       lastName: undefined,
       now: "2026-04-27T00:00:00.000Z",
     });
-    expect(links.insert).toHaveBeenNthCalledWith(1, {
+    expect(links.insert).toHaveBeenCalledOnce();
+    expect(links.insert).toHaveBeenCalledWith({
       adminChatId: 12345,
       adminMessageId: 998,
-      userChatId: 777,
-      userMessageId: 8,
-      createdAt: "2026-04-27T00:00:00.000Z",
-    });
-    expect(links.insert).toHaveBeenNthCalledWith(2, {
-      adminChatId: 12345,
-      adminMessageId: 999,
       userChatId: 777,
       userMessageId: 8,
       createdAt: "2026-04-27T00:00:00.000Z",
@@ -97,17 +95,18 @@ describe("handleUserMessage", () => {
 
     expect(telegram.copyMessageToAdmin).toHaveBeenCalledWith(
       12345,
-      expect.objectContaining({ message_id: 9 })
+      expect.objectContaining({ message_id: 9 }),
+      expect.objectContaining({
+        inline_keyboard: [[
+          { text: "Reply", callback_data: "fg:r:457:778" },
+          { text: "Block", callback_data: "fg:b:457:778" },
+          { text: "Unblock", callback_data: "fg:u:457:778" },
+        ]],
+      })
     );
     expect(telegram.sendText).not.toHaveBeenCalled();
-    expect(links.insert).toHaveBeenNthCalledWith(1, {
-      adminChatId: 12345,
-      adminMessageId: 1000,
-      userChatId: 778,
-      userMessageId: 9,
-      createdAt: "2026-04-27T00:00:01.000Z",
-    });
-    expect(links.insert).toHaveBeenNthCalledWith(2, {
+    expect(links.insert).toHaveBeenCalledOnce();
+    expect(links.insert).toHaveBeenCalledWith({
       adminChatId: 12345,
       adminMessageId: 1001,
       userChatId: 778,
@@ -144,7 +143,7 @@ describe("handleUserMessage", () => {
 
     expect(telegram.sendText).toHaveBeenCalledWith(779, UNSUPPORTED_MESSAGE_NOTICE);
     expect(users.upsert).toHaveBeenCalled();
-    expect(links.insert).toHaveBeenCalledTimes(1);
+    expect(links.insert).not.toHaveBeenCalled();
   });
 
   it("silently ignores blocked users", async () => {

@@ -1,4 +1,5 @@
 import type { Context } from "grammy";
+import { handleAdminAction } from "../handlers/admin-action";
 import { handleAdminReply } from "../handlers/admin-reply";
 import { handleUserMessage } from "../handlers/user-message";
 import { createMessageLinkRepository } from "../repositories/message-links";
@@ -16,6 +17,19 @@ export function createRouter(env: Env, bot: { api: unknown }) {
 
   return {
     async route(ctx: Context) {
+      const callbackQuery = ctx.callbackQuery;
+      if (callbackQuery) {
+        await handleAdminAction({
+          adminChatId,
+          callbackQuery,
+          telegram,
+          links,
+          blockedUsers,
+          now: new Date().toISOString(),
+        });
+        return;
+      }
+
       const message = ctx.message;
       if (!message) return;
 

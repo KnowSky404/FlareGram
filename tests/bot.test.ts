@@ -60,3 +60,38 @@ describe("resolveBotInfo", () => {
     expect(botInfo).toEqual(runtimeBotInfo);
   });
 });
+
+describe("createBot", () => {
+  it("registers message and callback query handlers", async () => {
+    const handlers = new Map<string, unknown>();
+
+    vi.resetModules();
+    vi.doMock("grammy", () => ({
+      Bot: vi.fn().mockImplementation(() => ({
+        botInfo: {
+          id: 3,
+          is_bot: true,
+          first_name: "Mock Bot",
+          username: "mock_bot",
+        },
+        on: vi.fn((event: string, handler: unknown) => {
+          handlers.set(event, handler);
+        }),
+      })),
+    }));
+
+    const { createBot: createMockedBot } = await import("../src/bot");
+
+    await createMockedBot({
+      BOT_TOKEN: "token",
+      ADMIN_CHAT_ID: "12345",
+      WEBHOOK_SECRET: "secret",
+      DB: {} as D1Database,
+    });
+
+    expect(handlers.has("message")).toBe(true);
+    expect(handlers.has("callback_query:data")).toBe(true);
+
+    vi.doUnmock("grammy");
+  });
+});

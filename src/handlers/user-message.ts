@@ -1,4 +1,5 @@
 import type { Message } from "grammy/types";
+import type { InlineKeyboardMarkup } from "grammy/types";
 import { UNSUPPORTED_MESSAGE_NOTICE } from "../lib/constants";
 
 interface Dependencies {
@@ -7,11 +8,13 @@ interface Dependencies {
   telegram: {
     copyMessageToAdmin(
       adminChatId: number,
-      message: Message
+      message: Message,
+      replyMarkup?: InlineKeyboardMarkup
     ): Promise<{ message_id: number }>;
     sendTextToAdmin(
       adminChatId: number,
-      text: string
+      text: string,
+      replyMarkup?: InlineKeyboardMarkup
     ): Promise<{ message_id: number }>;
     sendText(chatId: number, text: string): Promise<unknown>;
   };
@@ -50,9 +53,24 @@ function formatSenderIdentity(message: Message): string {
     `Username: ${username}`,
     `User ID: ${from?.id ?? "-"}`,
     `Chat ID: ${message.chat.id}`,
-    "",
-    "Reply here with /block or /unblock.",
   ].join("\n");
+}
+
+function formatAdminTextMessage(message: Message): string {
+  return [formatSenderIdentity(message), "", message.text].join("\n");
+}
+
+function createAdminActionKeyboard(
+  telegramUserId: number,
+  telegramChatId: number
+): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [[
+      { text: "Reply", callback_data: `fg:r:${telegramUserId}:${telegramChatId}` },
+      { text: "Block", callback_data: `fg:b:${telegramUserId}:${telegramChatId}` },
+      { text: "Unblock", callback_data: `fg:u:${telegramUserId}:${telegramChatId}` },
+    ]],
+  };
 }
 
 export async function handleUserMessage(deps: Dependencies): Promise<void> {
@@ -71,22 +89,32 @@ export async function handleUserMessage(deps: Dependencies): Promise<void> {
     now,
   });
 
-  const identity = await telegram.sendTextToAdmin(
-    adminChatId,
-    formatSenderIdentity(message)
-  );
+  const keyboard = createAdminActionKeyboard(message.from.id, message.chat.id);
 
-  await links.insert({
-    adminChatId,
-    adminMessageId: identity.message_id,
-    userChatId: message.chat.id,
-    userMessageId: message.message_id,
-    createdAt: now,
-  });
+  if (message.text) {
+    const sent = await telegram.sendTextToAdmin(
+      adminChatId,
+      formatAdminTextMessage(message),
+      keyboard
+    );
+
+    await links.insert({
+      adminChatId,
+      adminMessageId: sent.message_id,
+      userChatId: message.chat.id,
+      userMessageId: message.message_id,
+      createdAt: now,
+    });
+    return;
+  }
 
   let copied: { message_id: number };
   try {
-    copied = await telegram.copyMessageToAdmin(adminChatId, message);
+    copied = await telegram.copyMessageToAdmin(
+      adminChatId,
+      message,
+      keyboard
+    );
   } catch {
     await telegram.sendText(message.chat.id, UNSUPPORTED_MESSAGE_NOTICE);
     return;

@@ -52,5 +52,9 @@ export async function createBot(env: Env) {
     await router.route(ctx);
   });
 
+  bot.on("callback_query:data", async (ctx) => {
+    await router.route(ctx);
+  });
+
   return bot;
 }

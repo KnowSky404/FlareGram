@@ -10,3 +10,6 @@ export const UNSUPPORTED_MESSAGE_NOTICE =
 export const ADMIN_BLOCKED_USER_MESSAGE = "User has been blocked.";
 
 export const ADMIN_UNBLOCKED_USER_MESSAGE = "User has been unblocked.";
+
+export const ADMIN_REPLY_PROMPT_MESSAGE =
+  "Reply to this message to send your response to the user.";
