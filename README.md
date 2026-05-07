@@ -25,6 +25,19 @@ FlareGram 是一个基于 `Cloudflare Workers + grammY + D1` 的 Telegram 双向
 - Cloudflare 账号
 - 一个已通过 `@BotFather` 创建的 Telegram Bot
 
+## 配置文件约定
+
+仓库只提交 example 文件，不提交真实部署值：
+
+- `worker-secrets.env.example`：所有需要手动填写的变量模板
+- `wrangler.jsonc.example`：生成后的 Wrangler 配置示例
+
+本地真实文件不会提交到 Git：
+
+- `worker-secrets.env`：唯一需要你手动填写的本地配置文件
+- `wrangler.jsonc`：由 `pnpm run configure` 生成，供 Wrangler 使用
+- `.dev.vars`：由 `pnpm run configure` 生成，供 Wrangler 本地开发读取 secrets
+
 ## 一次性初始化
 
 ### 1. 安装依赖
@@ -39,7 +52,25 @@ pnpm install
 pnpm wrangler login
 ```
 
-### 3. 创建 D1 数据库
+### 3. 创建统一配置文件
+
+项目里所有需要手动填写的部署配置、运行时变量和本地 secrets 都集中在一个本地文件里：
+
+```bash
+cp worker-secrets.env.example worker-secrets.env
+```
+
+然后编辑 `worker-secrets.env`。这个文件不会提交到 Git。
+
+最少需要填写：
+
+- `CUSTOM_DOMAIN`：可选。使用自定义域名时填完整域名，例如 `flaregram.example.com`；不用时留空
+- `D1_DATABASE_ID`：创建 D1 后得到的 database id
+- `ADMIN_CHAT_ID`：接收用户私信转发的管理员 Telegram chat id
+- `BOT_TOKEN`：BotFather 给你的 Telegram bot token
+- `WEBHOOK_SECRET`：高强度随机字符串，会作为 webhook URL 路径的一部分
+
+### 4. 创建 D1 数据库
 
 ```bash
 pnpm wrangler d1 create flaregram
@@ -54,21 +85,11 @@ database_name = "flaregram"
 database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
-把返回的 `database_id` 填到项目根目录的 `wrangler.jsonc`：
+把返回的 `database_id` 填到 `worker-secrets.env` 的 `D1_DATABASE_ID`。
 
-```jsonc
-{
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "flaregram",
-      "database_id": "你的真实 database_id"
-    }
-  ]
-}
-```
+如果你修改了 `D1_DATABASE_NAME`，创建 D1 时也要使用同一个名字。
 
-### 4. 获取管理员 Chat ID
+### 5. 获取管理员 Chat ID
 
 你需要知道“接收所有私信转发的管理员账号”的 `chat_id`。
 
@@ -86,33 +107,45 @@ curl "https://api.telegram.org/bot<你的BOT_TOKEN>/getUpdates"
 - `message.from.id`
 - 或 `message.chat.id`
 
-然后把它填到 `wrangler.jsonc`：
+然后把它填到 `worker-secrets.env` 的 `ADMIN_CHAT_ID`。
 
-```jsonc
-{
-  "vars": {
-    "ADMIN_CHAT_ID": "你的管理员 chat id"
-  }
-}
+### 6. 填写 Bot Token 和 Webhook Secret
+
+在 `worker-secrets.env` 里填写：
+
+- `BOT_TOKEN`：直接填 BotFather 给你的 token
+- `WEBHOOK_SECRET`：填一个高强度随机字符串，例如 `<生成的随机字符串>`
+- `CUSTOM_DOMAIN`：可选。使用自定义域名时填写完整域名；不用时留空
+
+说明：
+
+- `BOT_INFO` 不再需要手工配置，通常留空即可
+- Worker 会在首次请求时基于 `BOT_TOKEN` 自动调用 Telegram `getMe` 获取 bot 信息
+- 如果你之前已经配置过 `BOT_INFO`，当前版本仍会兼容读取，但新部署可以不再设置
+
+### 7. 生成本地配置
+
+```bash
+pnpm run configure
 ```
 
-### 5. 设置 Secrets
+这个命令会基于 `worker-secrets.env` 生成两个不会提交到 Git 的本地文件：
+
+- `wrangler.jsonc`：Wrangler 部署配置，包含真实域名、D1 ID 和 `ADMIN_CHAT_ID`
+- `.dev.vars`：Wrangler 本地开发 secrets，包含 `BOT_TOKEN`、`WEBHOOK_SECRET` 和可选 `BOT_INFO`
+
+如果你修改了 `worker-secrets.env`，重新运行一次 `pnpm run configure`。
+
+### 8. 上传生产 Secrets
+
+部署到 Cloudflare 前，把生产 secrets 写入 Cloudflare。这里需要手动粘贴 `worker-secrets.env` 里的对应值：
 
 ```bash
 pnpm wrangler secret put BOT_TOKEN
 pnpm wrangler secret put WEBHOOK_SECRET
 ```
 
-建议：
-
-- `BOT_TOKEN`：直接填 BotFather 给你的 token
-- `WEBHOOK_SECRET`：填一个高强度随机字符串，例如 `flaregram-prod-2026-xxxxxx`
-
-说明：
-
-- `BOT_INFO` 不再需要手工配置
-- Worker 会在首次请求时基于 `BOT_TOKEN` 自动调用 Telegram `getMe` 获取 bot 信息
-- 如果你之前已经配置过 `BOT_INFO`，当前版本仍会兼容读取，但新部署可以不再设置
+`.dev.vars` 只用于本地开发，不会自动上传到 Cloudflare。
 
 ## 数据库初始化
 
@@ -130,6 +163,14 @@ pnpm run db:migrate:local
 
 ## 部署
 
+部署前确认已经完成：
+
+1. `worker-secrets.env` 已填好
+2. 已运行 `pnpm run configure`
+3. 已运行 `pnpm wrangler secret put BOT_TOKEN`
+4. 已运行 `pnpm wrangler secret put WEBHOOK_SECRET`
+5. 已运行 `pnpm run db:migrate:remote`
+
 ```bash
 pnpm run deploy
 ```
@@ -140,26 +181,17 @@ pnpm run deploy
 https://flaregram.<your-subdomain>.workers.dev
 ```
 
-如果你要直接绑定 Cloudflare 托管的自定义域名，推荐把它写进 `wrangler.jsonc`，并把本地配置作为唯一真源。例如：
-
-```jsonc
-{
-  "routes": [
-    {
-      "pattern": "flaregram.example.com",
-      "custom_domain": true
-    }
-  ]
-}
-```
+如果你要直接绑定 Cloudflare 托管的自定义域名，把域名填到 `worker-secrets.env` 的 `CUSTOM_DOMAIN`，然后重新运行 `pnpm run configure`。
 
 说明：
 
 - `custom_domain: true` 适用于“这个子域名的所有流量都直接交给 Worker 处理”
 - 当域名所在 Zone 已托管在 Cloudflare 时，Cloudflare 会自动为 Custom Domain 管理 DNS 记录和证书
-- 如果你之后仍使用 `wrangler deploy`，不要只在 Cloudflare Dashboard 里修改路由；下次部署时本地 `wrangler.jsonc` 会覆盖 Dashboard 中的路由配置
+- 如果你之后仍使用 `wrangler deploy`，不要只在 Cloudflare Dashboard 里修改路由；下次部署时本地生成的 `wrangler.jsonc` 会覆盖 Dashboard 中的路由配置
 
 ## 注册 Telegram Webhook
+
+部署完成后，用实际 Worker 域名和 `WEBHOOK_SECRET` 注册 Telegram webhook。
 
 本项目 webhook 路径固定为：
 
@@ -214,6 +246,8 @@ curl "https://api.telegram.org/bot<你的BOT_TOKEN>/setWebhook?url=https://flare
 ```bash
 curl "https://api.telegram.org/bot<你的BOT_TOKEN>/getWebhookInfo"
 ```
+
+如果你之后重新生成了 `WEBHOOK_SECRET`，需要重新上传 Cloudflare secret，并重新注册 webhook。
 
 ## 部署后联调
 
