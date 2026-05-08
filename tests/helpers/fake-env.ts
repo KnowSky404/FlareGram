@@ -26,6 +26,7 @@ export function createStubD1Database() {
   const adminReplyTargets = new Map<number, Record<string, number | string>>();
   const usersByChatId = new Map<number, Record<string, number | string | null>>();
   const blockedUsers = new Map<number, Record<string, number | string>>();
+  const processedUpdates = new Map<number, Record<string, number | string>>();
 
   function createRaw(query: string): D1PreparedStatement["raw"] {
     return (async <T = unknown[]>(options?: {
@@ -109,6 +110,26 @@ export function createStubD1Database() {
             updated_at: updatedAt,
           });
           return createD1Result<T>();
+        }
+
+        if (query.includes("INSERT OR IGNORE INTO processed_updates")) {
+          const [updateId, createdAt] = values as [number, string];
+          if (processedUpdates.has(updateId)) {
+            return createD1Result<T>();
+          }
+
+          processedUpdates.set(updateId, {
+            update_id: updateId,
+            created_at: createdAt,
+          });
+          const result = createD1Result<T>();
+          return {
+            ...result,
+            meta: {
+              ...result.meta,
+              changes: 1,
+            },
+          };
         }
 
         if (query.includes("INSERT INTO message_links")) {
@@ -214,7 +235,13 @@ export function createStubD1Database() {
   };
 
   return {
-    rawState: { messageLinks, adminReplyTargets, usersByChatId, blockedUsers },
+    rawState: {
+      messageLinks,
+      adminReplyTargets,
+      usersByChatId,
+      blockedUsers,
+      processedUpdates,
+    },
     db,
   };
 }

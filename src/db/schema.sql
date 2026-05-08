@@ -38,3 +38,8 @@ CREATE TABLE IF NOT EXISTS admin_reply_targets (
   user_message_id INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS processed_updates (
+  update_id INTEGER PRIMARY KEY,
+  created_at TEXT NOT NULL
+);
